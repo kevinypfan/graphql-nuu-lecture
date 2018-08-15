@@ -1,6 +1,6 @@
 const express = require('express');
 const expressGraphQL = require('express-graphql');
-const { find } = require('lodash');
+const { find, filter } = require('lodash');
 const { singers, songs } = require('./schema/data');
 
 const app = express();
@@ -17,16 +17,22 @@ const {
 const SingerType = new GraphQLObjectType({
   name: 'SingerType',
   description: "query for singer",
-  fields: {
+  fields: () => ({
     id: { type: GraphQLID },
     firstName: { type: GraphQLString },
-    lastName: { type: GraphQLString }
-  }
+    lastName: { type: GraphQLString },
+    songs: {
+      type: new GraphQLList(SongType),
+      resolve(root, args, context) {
+        return filter(songs, (song) => song.singerId === root.id)
+      }
+    }
+  })
 });
 
 const SongType = new GraphQLObjectType({
   name: 'SongType',
-  fields: {
+  fields: () => ({
     id: { type: GraphQLID },
     title: { type: GraphQLString },
     votes: { type: GraphQLInt },
@@ -36,7 +42,7 @@ const SongType = new GraphQLObjectType({
         return find(singers, { id: root.singerId })
       }
     }
-  }
+  })
 })
 
 const RootQuery = new GraphQLObjectType({
